@@ -1,1 +1,1 @@
-### Si hacen algunos cambios en el codigo lo guardan acá en github asi todos los tenemos :B
+### Si hacen algunos cambios en el codigo lo guardan acá en github asi todos los tenemos :B XP
