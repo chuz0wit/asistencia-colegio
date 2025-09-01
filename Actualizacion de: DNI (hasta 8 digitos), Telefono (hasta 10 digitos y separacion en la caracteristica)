@@ -1,0 +1,141 @@
+import { useState } from 'react';
+
+// Ahora el componente recibe 'onDocenteAdded' como una propiedad (prop)
+function AddDocenteForm({ onDocenteAdded }) {
+  const [formData, setFormData] = useState({
+    DNI: '',
+    Nombre: '',
+    Apellido: '',
+    Turno: '',
+    Email: '',
+    Telefono: ''
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Validación para el campo DNI
+    if (name === 'DNI') {
+      if (value.length > 8) {
+        alert('El DNI no puede tener más de 8 dígitos.');
+        return;
+      }
+    }
+    
+    // **Nueva lógica y validación para el campo Teléfono**
+    if (name === 'Telefono') {
+      // Remover cualquier carácter que no sea un número, incluyendo espacios
+      const cleanedValue = value.replace(/[^0-9]/g, '');
+      
+      // Limita la longitud a 10 dígitos (sin contar el espacio)
+      if (cleanedValue.length > 10) {
+        return;
+      }
+      
+      // Formatea el valor con un espacio después de los primeros 4 dígitos
+      let formattedValue = cleanedValue;
+      if (cleanedValue.length > 4) {
+        formattedValue = `${cleanedValue.slice(0, 4)} ${cleanedValue.slice(4)}`;
+      }
+      
+      setFormData(prevState => ({
+        ...prevState,
+        [name]: formattedValue
+      }));
+      return; // Detiene la ejecución para no afectar otros campos
+    }
+    
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validación final antes de enviar
+    if (formData.DNI.length !== 8) {
+      alert('El DNI debe tener exactamente 8 dígitos.');
+      return;
+    }
+
+    try {
+      // Limpia el campo de teléfono antes de enviar para evitar el espacio
+      const dataToSend = {
+        ...formData,
+        Telefono: formData.Telefono.replace(/[^0-9]/g, '')
+      };
+
+      const response = await fetch('http://localhost:3000/api/docentes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dataToSend),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al agregar el docente');
+      }
+
+      const result = await response.json();
+      alert(result.message);
+
+      // Llama a la función que le pasamos desde App.jsx para recargar la lista
+      onDocenteAdded();
+
+      // Limpia el formulario
+      setFormData({
+        DNI: '',
+        Nombre: '',
+        Apellido: '',
+        Turno: '',
+        Email: '',
+        Telefono: ''
+      });
+
+    } catch (error) {
+      console.error('Error al agregar el docente:', error);
+      alert(`Error: ${error.message}`);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="docente-form">
+      <h2 className="form-title">Agregar Nuevo Docente</h2>
+      <div className="form-group">
+        <label className="form-label">DNI:</label>
+        <input type="text" name="DNI" value={formData.DNI} onChange={handleChange} required className="form-input" maxLength="8" pattern="[0-9]{8}" title="El DNI debe contener 8 dígitos numéricos" />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Nombre:</label>
+        <input type="text" name="Nombre" value={formData.Nombre} onChange={handleChange} required className="form-input" />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Apellido:</label>
+        <input type="text" name="Apellido" value={formData.Apellido} onChange={handleChange} required className="form-input" />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Turno:</label>
+        <select name="Turno" value={formData.Turno} onChange={handleChange} className="form-input" required>
+          <option value="" disabled>Seleccione un turno</option>
+          <option value="Mañana">Mañana</option>
+          <option value="Tarde">Tarde</option>
+        </select>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Email:</label>
+        <input type="email" name="Email" value={formData.Email} onChange={handleChange} className="form-input" />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Teléfono:</label>
+        <input type="text" name="Telefono" value={formData.Telefono} onChange={handleChange} className="form-input" />
+      </div>
+      <button type="submit" className="form-button">Agregar Docente</button>
+    </form>
+  );
+}
+
+export default AddDocenteForm;
